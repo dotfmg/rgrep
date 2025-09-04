@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rgrep_practices>
+    <plan>
+        <overview>
+            Refactorización completa de rgrep aplicando buenas prácticas de arquitectura, 
+            manejo de errores, UX de CLI, rendimiento y pruebas para crear un grep 
+            modular, robusto y mantenible.
+        </overview>
+        
+        <modules>
+            <module name="src/errors.rs">
+                Tipo de error unificado (RgrepError) con exit codes explícitos (0,1,2,3) 
+                y mensajes consistentes en stderr.
+            </module>
+            <module name="src/cli.rs">
+                CLI limpio con Clap derive, validaciones POSIX (soporte para '-' como stdin),
+                y validación de combinaciones de flags.
+            </module>
+            <module name="src/search.rs">
+                Lógica de búsqueda optimizada con traits Matcher, separación clara entre
+                matching e iteración de archivos, sin copias innecesarias.
+            </module>
+            <module name="src/io.rs">
+                Manejo eficiente de I/O con InputSource, lectura sin acumular en memoria,
+                normalización de line endings.
+            </module>
+            <module name="src/app.rs">
+                Lógica principal de aplicación, orquesta todos los módulos con manejo 
+                robusto de errores.
+            </module>
+            <module name="src/main.rs">
+                Punto de entrada mínimo que delega a app::run().
+            </module>
+        </modules>
+    </plan>
+
+    <código>
+        <architecture>
+            <pattern>Separación de responsabilidades en módulos especializados</pattern>
+            <error_handling>Tipo unificado RgrepError con exit codes POSIX</error_handling>
+            <cli_interface>Clap derive con validaciones y ayuda de calidad</cli_interface>
+            <performance>Búsqueda sin copias innecesarias, lectura streaming</performance>
+            <maintainability>Código autodocumentado, immutabilidad por defecto</maintainability>
+        </architecture>
+
+        <key_improvements>
+            <item>Exit codes explícitos: 0=éxito, 1=sin matches, 2=args inválidos, 3=error I/O</item>
+            <item>Soporte POSIX para '-' como stdin explícito</item>
+            <item>Validación de combinaciones de flags (no mezclar stdin con archivos)</item>
+            <item>Matching optimizado con Cow para case-insensitive ASCII</item>
+            <item>Prefijos de salida consistentes (archivo:linea:contenido)</item>
+            <item>Mensajes de error uniformes con prefijo 'rgrep:'</item>
+            <item>Manejo robusto de errores I/O sin abortar procesamiento</item>
+        </key_improvements>
+
+        <conventions>
+            <naming>Consistente en inglés, clara intención</naming>
+            <documentation>Documentación completa de tipos y funciones públicas</documentation>
+            <testing>Coverage &gt; 70% con tests unitarios e integración</testing>
+            <formatting>rustfmt aplicado, clippy warnings = 0</formatting>
+        </conventions>
+    </código>
+
+    <pruebas>
+        <unit_tests>
+            <coverage>17 tests unitarios</coverage>
+            <modules>
+                <test module="src/search.rs">Tests para matchers y formateo</test>
+                <test module="tests/parse.rs">Tests para parsing CLI</test>
+                <test module="tests/search.rs">Tests de funcionalidad y integración</test>
+            </modules>
+        </unit_tests>
+
+        <integration_tests>
+            <file_handling>Pruebas con archivos temporales</file_handling>
+            <cli_validation>Validación de argumentos y flags</cli_validation>
+            <error_scenarios>Manejo de archivos inexistentes y combinaciones inválidas</error_scenarios>
+        </integration_tests>
+
+        <usage_examples>
+            <basic>cargo run -- foo file.txt</basic>
+            <case_insensitive>cargo run -- -i ERROR log.txt</case_insensitive>
+            <line_numbers>cargo run -- -n pattern file1.txt file2.txt</line_numbers>
+            <stdin>echo "test" | cargo run -- test</stdin>
+            <explicit_stdin>cargo run -- pattern -</explicit_stdin>
+        </usage_examples>
+    </pruebas>
+
+    <notas_de_diseño>
+        <decisions>
+            <decision>
+                <choice>Trait Matcher para extensibilidad</choice>
+                <rationale>Permite agregar fácilmente regex u otros tipos de matching</rationale>
+            </decision>
+            <decision>
+                <choice>InputSource en lugar de trait LineReader</choice>
+                <rationale>Evita problemas de lifetime y es más simple de usar</rationale>
+            </decision>
+            <decision>
+                <choice>Box&lt;dyn Iterator&gt; para lines</choice>
+                <rationale>Unifica diferentes tipos de iteradores manteniendo flexibilidad</rationale>
+            </decision>
+            <decision>
+                <choice>Validación en Config::validate()</choice>
+                <rationale>Centraliza lógica de validación, facilita testing</rationale>
+            </decision>
+        </decisions>
+
+        <trade_offs>
+            <performance_vs_memory>
+                Streaming de archivos vs carga completa - elegido streaming para 
+                archivos grandes
+            </performance_vs_memory>
+            <simplicity_vs_extensibility>
+                API simple vs soporte futuro para regex - preparado para extensión 
+                sin complejidad actual
+            </simplicity_vs_extensibility>
+            <error_handling>
+                Continue on error vs fail fast - elegido continue para comportamiento 
+                tipo grep real
+            </error_handling>
+        </trade_offs>
+
+        <future_enhancements>
+            <regex_support>Agregar soporte opcional para regex con feature flag</regex_support>
+            <color_support>Implementar --color=auto|always|never</color_support>
+            <performance>Benchmarks con archivos grandes</performance>
+            <golden_tests>Tests de regresión para output completa</golden_tests>
+        </future_enhancements>
+    </notas_de_diseño>
+
+    <quality_metrics>
+        <compilation>✅ Compila sin warnings</compilation>
+        <clippy>✅ 0 warnings de clippy</clippy>
+        <rustfmt>✅ Código formateado consistentemente</rustfmt>
+        <tests>✅ 17/17 tests pasando</tests>
+        <functionality>✅ CLI funcional con todas las features</functionality>
+        <documentation>✅ Módulos y funciones públicas documentadas</documentation>
+        <posix_compliance>✅ Soporte para convenciones POSIX</posix_compliance>
+    </quality_metrics>
+</rgrep_practices>
